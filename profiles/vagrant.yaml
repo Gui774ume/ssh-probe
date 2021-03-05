@@ -1,0 +1,389 @@
+unknown_user_default: block
+
+user_profiles:
+
+  - user: will
+
+    ## Process monitoring section
+    unknown_binary_default: mfa
+    binaries:
+      ## Allowed binaries
+      /usr/bin/ssh-probe-auth: allow
+      /bin/bash: allow
+      /bin/sh: allow
+      /usr/bin/mkdir: allow
+      /usr/bin/rm: allow
+      /usr/bin/grep: allow
+      /usr/bin/uname: allow
+      /usr/bin/dircolors: allow
+      /usr/bin/ls: allow
+      /usr/bin/awk: allow
+      /usr/bin/wc: allow
+      /usr/bin/hg: allow
+      /usr/bin/sudo: allow # Don't forget that "socket_creation" and read access to "/etc/shadow" are required to execute a sudo command and "privilege_elevation" is required to become root
+      /usr/bin/su: allow
+      /usr/bin/groups: allow
+      /usr/bin/locale-check: allow
+      /usr/bin/id: allow
+      /usr/bin/lesspipe: allow
+      /usr/bin/basename: allow
+      /usr/bin/dirname: allow
+      /usr/bin/cat: allow
+      /usr/bin/clear_console: allow
+      /usr/lib/command-not-found: allow
+      /usr/bin/snap: allow
+      /usr/bin/touch: allow
+      /usr/bin/zsh: allow
+      /usr/sbin/insmod: allow
+      /usr/bin/vim: allow
+      /usr/bin/clear: allow
+      /usr/bin/dig: allow
+
+      /usr/bin/ps: allow
+      /usr/bin/strace: allow
+
+      ## Blocked binaries
+      /usr/bin/apt: block
+      /usr/bin/apt-get: block
+      /usr/bin/dpkg: block
+
+      ## Binaries only allowed with MFA
+      /usr/bin/docker: block # Use nsenter instead. If you really need docker, don't forget to allow "nsenter" and "socket_creation" if you need to docker exec into a container
+      /usr/bin/python3: mfa
+      /usr/bin/wget: mfa # Don't forget to allow "socket_creation" if you need network access
+      /usr/bin/ping: mfa
+
+      ## Binaries that trigger the kill switch
+      /usr/bin/passwd: kill
+      /usr/sbin/adduser: kill
+      /usr/bin/nc: kill
+      /usr/sbin/reboot: kill
+
+    ## File Integrity Monitoring section
+    fim:
+      ## If a file is selected by multiple patterns, on the last match will take effect
+      - pattern: /etc/*
+        access_right: write
+        action: block
+      - pattern: /etc/passwd
+        access_right: write
+        action: kill
+      - pattern: /etc/shadow
+        access_right: read
+        action: mfa # required to change user
+      - pattern: /etc/shadow
+        access_right: write
+        action: kill
+      - pattern: /etc/gshadow
+        access_right: read
+        action: mfa
+      - pattern: /etc/gshadow
+        access_right: write
+        action: kill
+
+      ## sensitive files
+      - pattern: /home/*/.ssh/*
+        access_right: any
+        action: kill
+      - pattern: /home/*/.bashrc
+        access_right: write
+        action: kill
+      - pattern: /home/*/.bash_history
+        access_right: any
+        action: mfa # an attacker would probably clean its tracks anyway, so let's not let them find interesting things in the history
+      - pattern: /home/*/.bash_logout
+        access_right: write
+        action: block
+      - pattern: /home/*/.python_history
+        access_right: any
+        action: block
+      - pattern: /root/.ssh/*
+        access_right: any
+        action: block
+      - pattern: /root/.bashrc
+        access_right: write
+        action: block
+      - pattern: /root/.bash_history
+        access_right: any
+        action: block # remember that is means that you won't be able to see what users did ... although an attacker would probably clean its tracks anyway, so let's not let them find interesting things in the history
+      - pattern: /root/.python_history
+        access_right: any
+        action: block
+
+      ## stop binaries modifications
+      - pattern: /bin/*
+        access_right: write
+        action: kill
+      - pattern: /sbin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/bin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/sbin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/local/bin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/local/sbin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/lib/command-not-found
+        access_right: write
+        action: kill
+
+      ## stop shared libraries modifications
+      - pattern: /lib/x86_64-linux-gnu/*
+        access_right: write
+        action: kill
+
+      ## protect ssh-probe from being disabled
+      - pattern: /sys/kernel/debug/tracing/kprobe_events
+        access_right: any
+        action: kill
+
+      ## Module persistence (Drovorub)
+      - pattern: /etc/modules
+        access_right: any
+        action: kill
+      - pattern: /etc/modules-load.d/*
+        access_right: any
+        action: kill
+      - pattern: /proc/modules
+        access_right: any
+        action: kill
+
+    deletions_and_moves: mfa # deletions and moves can be used to bypass FIM and process monitoring. They are disabled by default.
+
+    ## Socket creation section
+    socket_creation: mfa
+
+    ## process level protections
+    process_level_protections: kill
+
+    ## os level protections
+    os_level_protections: kill
+
+    ## performance monitoring
+    performance_monitoring: mfa
+
+    ## kill
+    kill: mfa
+
+    ## privilege elevation
+    privilege_elevation: mfa
+
+
+
+
+
+  - user: root
+
+    ## Process monitoring section
+    unknown_binary_default: mfa
+    binaries:
+      ## Allowed binaries
+      /usr/bin/ssh-probe-auth: allow
+      /bin/bash: allow
+      /bin/sh: allow
+      /usr/bin/mkdir: allow
+      /usr/bin/rm: allow
+      /usr/bin/grep: allow
+      /usr/bin/uname: allow
+      /usr/bin/dircolors: allow
+      /usr/bin/ls: allow
+      /usr/bin/awk: allow
+      /usr/bin/wc: allow
+      /usr/bin/hg: allow
+      /usr/bin/sudo: allow # Don't forget that "socket_creation" and read access to "/etc/shadow" are required to execute a sudo command and "privilege_elevation" is required to become root
+      /usr/bin/su: allow
+      /usr/bin/groups: allow
+      /usr/bin/locale-check: allow
+      /usr/bin/id: allow
+      /usr/bin/lesspipe: allow
+      /usr/bin/basename: allow
+      /usr/bin/dirname: allow
+      /usr/bin/cat: allow
+      /usr/bin/clear_console: allow
+      /usr/lib/command-not-found: allow
+      /usr/bin/snap: allow
+      /usr/bin/touch: allow
+      /usr/bin/zsh: allow
+      /usr/sbin/insmod: allow
+      /usr/bin/vim: allow
+      /usr/bin/clear: allow
+      /usr/bin/dig: allow
+
+      ## Blocked binaries
+      /usr/bin/apt: block
+      /usr/bin/apt-get: block
+      /usr/bin/dpkg: block
+
+      ## Binaries only allowed with MFA
+      /usr/bin/docker: block # Use nsenter instead. If you really need docker, don't forget to allow "nsenter" and "socket_creation" if you need to docker exec into a container
+      /usr/bin/python3: mfa
+      /usr/bin/wget: mfa # Don't forget to allow "socket_creation" if you need network access
+      /usr/bin/ping: mfa
+
+      ## Binaries that trigger the kill switch
+      /usr/bin/passwd: kill
+      /usr/sbin/adduser: kill
+      /usr/bin/nc: kill
+      /usr/sbin/reboot: kill
+
+    ## File Integrity Monitoring section
+    fim:
+      ## If a file is selected by multiple patterns, on the last match will take effect
+      - pattern: /etc/*
+        access_right: write
+        action: block
+      - pattern: /etc/passwd
+        access_right: write
+        action: kill
+      - pattern: /etc/shadow
+        access_right: read
+        action: mfa # required to change user
+      - pattern: /etc/shadow
+        access_right: write
+        action: kill
+      - pattern: /etc/gshadow
+        access_right: read
+        action: mfa
+      - pattern: /etc/gshadow
+        access_right: write
+        action: kill
+
+      ## sensitive files
+      - pattern: /home/*/.ssh/*
+        access_right: any
+        action: kill
+      - pattern: /home/*/.bashrc
+        access_right: write
+        action: kill
+      - pattern: /home/*/.bash_history
+        access_right: any
+        action: mfa # an attacker would probably clean its tracks anyway, so let's not let them find interesting things in the history
+      - pattern: /home/*/.bash_logout
+        access_right: write
+        action: block
+      - pattern: /home/*/.python_history
+        access_right: any
+        action: block
+      - pattern: /root/.ssh/*
+        access_right: any
+        action: block
+      - pattern: /root/.bashrc
+        access_right: write
+        action: block
+      - pattern: /root/.bash_history
+        access_right: any
+        action: block # remember that is means that you won't be able to see what users did ... although an attacker would probably clean its tracks anyway, so let's not let them find interesting things in the history
+      - pattern: /root/.python_history
+        access_right: any
+        action: block
+
+      ## stop binaries modifications
+      - pattern: /bin/*
+        access_right: write
+        action: kill
+      - pattern: /sbin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/bin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/sbin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/local/bin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/local/sbin/*
+        access_right: write
+        action: kill
+      - pattern: /usr/lib/command-not-found
+        access_right: write
+        action: kill
+
+      ## stop shared libraries modifications
+      - pattern: /lib/x86_64-linux-gnu/*
+        access_right: write
+        action: kill
+
+      ## protect ssh-probe from being disabled
+      - pattern: /sys/kernel/debug/tracing/kprobe_events
+        access_right: any
+        action: kill
+
+      ## Module persistence (Drovorub)
+      - pattern: /etc/modules
+        access_right: any
+        action: kill
+      - pattern: /etc/modules-load.d/*
+        access_right: any
+        action: kill
+      - pattern: /proc/modules
+        access_right: any
+        action: kill
+
+    deletions_and_moves: mfa # deletions and moves can be used to bypass FIM and process monitoring. They are disabled by default.
+
+    ## Socket creation section
+    socket_creation: mfa
+
+    ## process level protections
+    process_level_protections: kill
+
+    ## os level protections
+    os_level_protections: kill
+
+    ## performance monitoring
+    performance_monitoring: mfa
+
+    ## kill
+    kill: mfa
+
+    ## privilege elevation
+    privilege_elevation: mfa
+
+
+
+
+
+
+
+
+
+
+
+
+
+  - user: vagrant
+
+    ## Process monitoring section
+    unknown_binary_default: allow
+    binaries:
+
+    ## File Integrity Monitoring section
+    fim:
+
+    deletions_and_moves: allow
+
+    ## Socket creation section
+    socket_creation: allow
+
+    ## process level protections
+    process_level_protections: allow
+
+    ## os level protections
+    os_level_protections: allow
+
+    ## performance monitoring
+    performance_monitoring: allow
+
+    ## kill
+    kill: allow
+
+    ## privilege elevation
+    privilege_elevation: allow

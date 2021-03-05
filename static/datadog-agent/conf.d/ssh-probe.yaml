@@ -1,0 +1,8 @@
+##Log section
+logs:
+  - type: udp
+    port: 10518
+    service: ssh-probe
+    source: ssh-probe
+    tags:
+      - ssh-probe:event

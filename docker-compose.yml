@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  agent:
+    container_name: agent
+    image: datadog/agent:latest
+    restart: unless-stopped
+    ports:
+      - "8126:8126/tcp"
+      - "8125:8125/udp"
+      - "10518:10518/udp"
+      - "10518:10518/tcp"
+    environment:
+      - "DD_API_KEY=${DD_API_KEY}"
+      - "DD_LOGS_ENABLED=true"
+      - "DD_APM_ENABLED=true"
+      - "DD_PROCESS_AGENT_ENABLED=true"
+      - "DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true"
+      - "DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true"
+#      - "DD_SITE=datadoghq.eu"
+    volumes:
+      - "./logs/:/logs:rw"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/proc/:/host/proc/:ro"
+      - "/sys/fs/cgroup/:/host/sys/fs/cgroup:ro"
+      - "./static/datadog-agent/conf.d/:/conf.d:ro"

@@ -1,0 +1,6 @@
+.DS_Store
+.idea/
+bin/
+vendor/
+profiles/qr.png
+secrets.sh
