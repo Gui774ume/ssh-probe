@@ -27,8 +27,8 @@ import (
 // SSHProbeAuthCmd represents the base command of ssh-probe-auth
 var SSHProbeAuthCmd = &cobra.Command{
 	Use:     "ssh-probe-auth",
-	Short:   "ssh-probe-auth is used to authenticate with ssh-probe with an one time password in order to approve sensitive administrative operations",
-	Long:    "ssh-probe-auth is used to authenticate with ssh-probe with an one time password in order to approve sensitive administrative operations",
+	Short:   "ssh-probe-auth is used to authenticate your session with a one time password, in order to approve sensitive administrative operations",
+	Long:    "ssh-probe-auth is used to authenticate your session with a one time password, in order to approve sensitive administrative operations",
 	RunE:    runSSHProbeAuthCmd,
 	Example: "ssh-probe-auth --timeout 30s",
 }

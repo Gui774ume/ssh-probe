@@ -41,5 +41,5 @@ func (sshp *SSHProbe) HandleNotifications(Cpu int, data []byte, perfMap *manager
 	notification.User = profile.User
 
 	sshp.Forward(notification)
-	// logrus.Println(notification)
+	logrus.Println(notification)
 }

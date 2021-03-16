@@ -81,6 +81,15 @@ __attribute__((always_inline)) static void fill_session_context(struct session_c
         session->unknown_binary_default = *action;
     }
 
+    // unknown file
+    key.category = CATEGORY_UNKNOWN_FILE;
+    action = bpf_map_lookup_elem(&actions, &key);
+    if (action == NULL) {
+        session->unknown_file_default = default_action;
+    } else {
+        session->unknown_file_default = *action;
+    }
+
     // socket creation
     key.category = CATEGORY_SOCKET_CREATION;
     action = bpf_map_lookup_elem(&actions, &key);

@@ -23,6 +23,7 @@ struct session_context_t
     u8 process_level_protections;
     u8 performance_monitoring;
     u8 kill;
+    u8 unknown_file_default;
 };
 
 #endif

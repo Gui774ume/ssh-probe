@@ -16,8 +16,9 @@ limitations under the License.
 package model
 
 import (
-	"github.com/Gui774ume/ssh-probe/pkg/utils"
 	"time"
+
+	"github.com/Gui774ume/ssh-probe/pkg/utils"
 )
 
 type KillRequest struct {

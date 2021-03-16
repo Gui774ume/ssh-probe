@@ -56,6 +56,7 @@ const (
 	CategoryKill                    Category = 10
 	CategoryGlobal                  Category = 11
 	CategoryFailedMFA               Category = 12
+	CategoryUnknownFile             Category = 13
 )
 
 // AllCategories lists all the available categories
@@ -72,6 +73,7 @@ var AllCategories = []Category{
 	CategoryKill,
 	CategoryGlobal,
 	CategoryFailedMFA,
+	CategoryUnknownFile,
 }
 
 func (c Category) String() string {
@@ -100,6 +102,8 @@ func (c Category) String() string {
 		return "global"
 	case CategoryFailedMFA:
 		return "too_many_failed_mfa_attempts"
+	case CategoryUnknownFile:
+		return "unknown_file"
 	default:
 		return fmt.Sprintf("unknown_category(%d)", c)
 	}

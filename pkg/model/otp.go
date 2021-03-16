@@ -19,12 +19,14 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/Gui774ume/ssh-probe/pkg/utils"
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
 	"unsafe"
+
+	"github.com/pkg/errors"
+
+	"github.com/Gui774ume/ssh-probe/pkg/utils"
 )
 
 // OTPRequest is used to represent an OTP request from the ssh-probe-auth

@@ -75,17 +75,17 @@ __attribute__((always_inline)) static u8 load_unknown_user_default() {
     return (u8) unknown_user_default;
 }
 
-// load_notification_level returns the notification level
-__attribute__((always_inline)) static u8 load_notification_level() {
-    u64 notification_level = 0;
-    LOAD_CONSTANT("notification_level", notification_level);
-    return (u8) notification_level;
+// load_access_control_events_level returns the access control events level
+__attribute__((always_inline)) static u8 load_access_control_events_level() {
+    u64 access_control_events_level = 0;
+    LOAD_CONSTANT("access_control_events_level", access_control_events_level);
+    return (u8) access_control_events_level;
 }
 
 // should_notify returns 1 if a notification should be sent, based on the current notification level parameter
 __attribute__((always_inline)) static int should_notify(u8 action) {
-    u64 notification_level = load_notification_level();
-    return (notification_level <= action);
+    u64 access_control_events_level = load_access_control_events_level();
+    return (access_control_events_level <= action);
 }
 
 // fill_process_context fills the provided notification with the process context available from eBPF

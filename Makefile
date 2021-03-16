@@ -24,7 +24,7 @@ build:
 	go build -o bin/ ./...
 
 run:
-	sudo --preserve-env=SSH_PROBE_SECRETS ./bin/ssh-probe --profiles ./profiles/vagrant.yaml --kernel-notification-level allow --agent-url "127.0.0.1:10518"
+	sudo --preserve-env=SSH_PROBE_SECRETS ./bin/ssh-probe --profiles ./profiles/vagrant.yaml --access-control-events-level allow --agent-url "127.0.0.1:10518"
 
 install:
 	sudo cp ./bin/ssh-probe* /usr/bin/

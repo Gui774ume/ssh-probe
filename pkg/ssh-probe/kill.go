@@ -16,11 +16,13 @@ limitations under the License.
 package ssh_probe
 
 import (
+	"syscall"
+
 	"github.com/DataDog/ebpf/manager"
-	"github.com/Gui774ume/ssh-probe/pkg/model"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
-	"syscall"
+
+	"github.com/Gui774ume/ssh-probe/pkg/model"
 )
 
 // HandleKillRequests handles process kill requests from the kernel

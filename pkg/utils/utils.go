@@ -18,9 +18,10 @@ package utils
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/pkg/errors"
 	"os"
 	"syscall"
+
+	"github.com/pkg/errors"
 )
 
 // InterfaceToBytes tranforms an interface into a C bytes array

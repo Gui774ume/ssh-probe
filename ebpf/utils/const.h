@@ -42,6 +42,7 @@
 #define CATEGORY_KILL                      10
 #define CATEGORY_GLOBAL                    11
 #define CATEGORY_FAILED_MFA                12
+#define CATEGORY_UNKNOWN_FILE              13
 
 // *_ACCESS flags are used to define open access rights
 #define READ_ACCESS 1

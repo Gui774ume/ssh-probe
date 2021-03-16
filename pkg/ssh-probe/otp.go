@@ -17,12 +17,14 @@ package ssh_probe
 
 import (
 	"fmt"
-	"github.com/DataDog/ebpf/manager"
-	"github.com/Gui774ume/ssh-probe/pkg/model"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/sys/unix"
 	"syscall"
 	"time"
+
+	"github.com/DataDog/ebpf/manager"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
+
+	"github.com/Gui774ume/ssh-probe/pkg/model"
 )
 
 // HandleOTPRequests handles OTP requests from ssh-probe-auth

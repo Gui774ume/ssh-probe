@@ -17,25 +17,26 @@ package ssh_probe
 
 import (
 	"bytes"
-	"github.com/DataDog/ebpf"
-	"github.com/DataDog/ebpf/manager"
-	"github.com/Gui774ume/ssh-probe/pkg/utils"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 
+	"github.com/DataDog/ebpf"
+	"github.com/DataDog/ebpf/manager"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
 	"github.com/Gui774ume/ssh-probe/pkg/assets"
 	"github.com/Gui774ume/ssh-probe/pkg/model"
+	"github.com/Gui774ume/ssh-probe/pkg/utils"
 )
 
 // SSHProbe is the main structure of the ssh probe project
 type SSHProbe struct {
-	profiles           model.Profiles
-	bootTime           time.Time
-	manager            *manager.Manager
-	notificationLevel  model.Action
-	disableGlobalScope bool
+	profiles                 model.Profiles
+	bootTime                 time.Time
+	manager                  *manager.Manager
+	accessControlEventsLevel model.Action
+	disableGlobalScope       bool
 
 	userProfileCookieMap *ebpf.Map
 	allowedBinariesMap   *ebpf.Map
@@ -94,8 +95,8 @@ func (sshp *SSHProbe) initManager() error {
 				Value: uint64(sshp.profiles.UnknownUserDefault.KernelValue()),
 			},
 			{
-				Name:  "notification_level",
-				Value: uint64(sshp.notificationLevel.KernelValue()),
+				Name:  "access_control_events_level",
+				Value: uint64(sshp.accessControlEventsLevel.KernelValue()),
 			},
 		},
 	}

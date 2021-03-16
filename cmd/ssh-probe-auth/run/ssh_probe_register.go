@@ -68,7 +68,7 @@ func runSSHProbeAuthCmd(cmd *cobra.Command, args []string) error {
 			return nil
 		}
 
-		// Wait for an answer from the kernel
+		// Wait for an answer from ssh-probe
 		timer = time.NewTimer(sshProbeTimeout)
 		select {
 		case <-timer.C:

@@ -17,7 +17,6 @@ package ssh_probe
 
 import (
 	"fmt"
-	"github.com/Gui774ume/ssh-probe/pkg/utils"
 	"os"
 	"strings"
 
@@ -26,6 +25,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/Gui774ume/ssh-probe/pkg/model"
+	"github.com/Gui774ume/ssh-probe/pkg/utils"
 )
 
 // insertProfiles calls insertProfile for user profile
@@ -99,6 +99,16 @@ func (sshp *SSHProbe) insertActions(profile *model.Profile) error {
 	}
 	if err := sshp.actions.Put(key, profile.UnknownBinaryDefault.KernelValue()); err != nil {
 		return errors.Wrapf(err, "failed to insert unknown binary default action")
+	}
+
+	// Unknown file
+	ak.Category = model.CategoryUnknownFile
+	key, err = ak.GetActionKey()
+	if err != nil {
+		return err
+	}
+	if err := sshp.actions.Put(key, profile.UnknownFile.KernelValue()); err != nil {
+		return errors.Wrapf(err, "failed to insert unknown file default action")
 	}
 
 	// Deletions and moves

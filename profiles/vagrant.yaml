@@ -1,8 +1,8 @@
-unknown_user_default: block
+unknown_user_default: kill
 
 user_profiles:
 
-  - user: will
+  - user: vagrant
 
     ## Process monitoring section
     unknown_binary_default: mfa
@@ -60,6 +60,7 @@ user_profiles:
       /usr/sbin/reboot: kill
 
     ## File Integrity Monitoring section
+    unknown_file_default: allow
     fim:
       ## If a file is selected by multiple patterns, on the last match will take effect
       - pattern: /etc/*
@@ -154,7 +155,7 @@ user_profiles:
         access_right: any
         action: kill
 
-    deletions_and_moves: mfa # deletions and moves can be used to bypass FIM and process monitoring. They are disabled by default.
+    deletions_and_moves: allow # deletions and moves can be used to bypass FIM and process monitoring. They are disabled by default.
 
     ## Socket creation section
     socket_creation: mfa
@@ -163,7 +164,7 @@ user_profiles:
     process_level_protections: kill
 
     ## os level protections
-    os_level_protections: kill
+    os_level_protections: allow
 
     ## performance monitoring
     performance_monitoring: mfa
@@ -172,11 +173,7 @@ user_profiles:
     kill: mfa
 
     ## privilege elevation
-    privilege_elevation: mfa
-
-
-
-
+    privilege_elevation: allow
 
   - user: root
 
@@ -346,44 +343,3 @@ user_profiles:
 
     ## privilege elevation
     privilege_elevation: mfa
-
-
-
-
-
-
-
-
-
-
-
-
-
-  - user: vagrant
-
-    ## Process monitoring section
-    unknown_binary_default: allow
-    binaries:
-
-    ## File Integrity Monitoring section
-    fim:
-
-    deletions_and_moves: allow
-
-    ## Socket creation section
-    socket_creation: allow
-
-    ## process level protections
-    process_level_protections: allow
-
-    ## os level protections
-    os_level_protections: allow
-
-    ## performance monitoring
-    performance_monitoring: allow
-
-    ## kill
-    kill: allow
-
-    ## privilege elevation
-    privilege_elevation: allow

@@ -17,8 +17,6 @@ package model
 
 import (
 	"fmt"
-	"github.com/dgryski/dgoogauth"
-	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"path"
@@ -26,7 +24,9 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/dgryski/dgoogauth"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Gui774ume/ssh-probe/pkg/utils"
 )
@@ -164,6 +164,7 @@ type Profile struct {
 	// File Integrity Monitoring
 	FIM               []*FilePolicy `yaml:"fim"`
 	DeletionsAndMoves Action        `yaml:"deletions_and_moves"`
+	UnknownFile       Action        `yaml:"unknown_file_default"`
 
 	// Socket creation
 	SocketCreation Action `yaml:"socket_creation"`

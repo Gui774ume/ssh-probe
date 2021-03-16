@@ -25,9 +25,7 @@ var SSHProbeCmd = &cobra.Command{
 	Short: "ssh-probe is a ssh session tracker based on eBPF, that can be used to mitigate the impact of stolen credentials",
 	Long: `ssh-probe is a ssh session tracker based on eBPF, that can be used to mitigate the impact of stolen credentials
 
-ssh-probe relies on eBPF to track ssh sessions at runtime. Stolen credentials impact by requiring 2FA on each
-sensitive action, as defined in the profile of each user.
-More information about the project can be found on github: https://github.com/Gui774ume/ssh-probe`,
+ssh-probe relies on eBPF to track ssh sessions at runtime. More information about the project can be found on github: https://github.com/Gui774ume/ssh-probe`,
 	RunE:    runSSHProbeCmd,
 	Example: "sudo ssh-probe --profiles /tmp/profiles",
 }
@@ -46,20 +44,20 @@ func init() {
 		"p",
 		`path to the file containing the security profiles for each user`)
 	SSHProbeCmd.Flags().VarP(
-		NewKernelNotifLevelSanitizer(&options.KernelNotificationLevel),
-		"kernel-notification-level",
-		"k",
-		`minimum kernel notification level, options: allow, block, mfa, kill`)
+		NewAccessControlEventsLevelSanitizer(&options.AccessControlEventsLevel),
+		"access-control-events-level",
+		"a",
+		`defines the access control events level that should be reported to Datadog, available options are: allow, block, mfa, kill`)
 	SSHProbeCmd.Flags().BoolVarP(
 		&options.DisableGlobalMFAScope,
 		"disable-mfa-global-scope",
-		"s",
+		"g",
 		false,
 		`Disable MFA tokens with global scope`)
 	SSHProbeCmd.Flags().StringVarP(
 		&options.AgentURL,
 		"agent-url",
-		"a",
+		"u",
 		"",
 		`Datadog agent URL used to forward logs to Datadog`)
 	SSHProbeCmd.MarkFlagRequired("profiles")

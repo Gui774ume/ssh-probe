@@ -154,7 +154,7 @@ int kprobe_vfs_open(struct pt_regs *ctx) {
     u8 *action = bpf_map_lookup_elem(&inodes, &selector);
     if (action == NULL) {
         // allow by default
-        open_ctx->action = ACTION_ALLOW;
+        open_ctx->action = session->unknown_file_default;
     } else {
         open_ctx->action = *action;
     }

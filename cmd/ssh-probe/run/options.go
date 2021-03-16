@@ -27,11 +27,11 @@ import (
 
 // CLIOptions are the command line options of ssh-probe
 type CLIOptions struct {
-	KernelNotificationLevel model.Action
-	LogLevel                logrus.Level
-	Profiles                string
-	DisableGlobalMFAScope   bool
-	AgentURL                string
+	AccessControlEventsLevel model.Action
+	LogLevel                 logrus.Level
+	Profiles                 string
+	DisableGlobalMFAScope    bool
+	AgentURL                 string
 }
 
 // LogLevelSanitizer is a log level sanitizer that ensures that the provided log level exists
@@ -96,23 +96,23 @@ func (ps *PathSanitizer) Type() string {
 	return "string"
 }
 
-type KernelNotifLevelSanitizer struct {
+type AccessControlEventsLevelSanitizer struct {
 	level *model.Action
 }
 
-// NewKernelNotifLevelSanitizer creates a new instance of KernelNotifLevelSanitizer.
-func NewKernelNotifLevelSanitizer(sanitizedLevel *model.Action) *KernelNotifLevelSanitizer {
+// NewAccessControlEventsLevelSanitizer creates a new instance of AccessControlEventsLevelSanitizer.
+func NewAccessControlEventsLevelSanitizer(sanitizedLevel *model.Action) *AccessControlEventsLevelSanitizer {
 	*sanitizedLevel = model.MFA
-	return &KernelNotifLevelSanitizer{
+	return &AccessControlEventsLevelSanitizer{
 		level: sanitizedLevel,
 	}
 }
 
-func (knls *KernelNotifLevelSanitizer) String() string {
+func (knls *AccessControlEventsLevelSanitizer) String() string {
 	return fmt.Sprintf("%v", *knls.level)
 }
 
-func (knls *KernelNotifLevelSanitizer) Set(val string) error {
+func (knls *AccessControlEventsLevelSanitizer) Set(val string) error {
 	action := model.Action(val)
 	if err := action.Sanitize(); err != nil {
 		return err
@@ -121,6 +121,6 @@ func (knls *KernelNotifLevelSanitizer) Set(val string) error {
 	return nil
 }
 
-func (knls *KernelNotifLevelSanitizer) Type() string {
+func (knls *AccessControlEventsLevelSanitizer) Type() string {
 	return "string"
 }

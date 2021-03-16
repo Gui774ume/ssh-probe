@@ -19,7 +19,6 @@ services:
       - "DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true"
 #      - "DD_SITE=datadoghq.eu"
     volumes:
-      - "./logs/:/logs:rw"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "/proc/:/host/proc/:ro"
       - "/sys/fs/cgroup/:/host/sys/fs/cgroup:ro"

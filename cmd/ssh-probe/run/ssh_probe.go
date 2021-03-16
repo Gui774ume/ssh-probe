@@ -36,7 +36,7 @@ func runSSHProbeCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// creates a new instance of ssh-probe
-	sshp, err := ssh_probe.NewSSHProbe(options.Profiles, options.KernelNotificationLevel, options.DisableGlobalMFAScope, options.AgentURL)
+	sshp, err := ssh_probe.NewSSHProbe(options.Profiles, options.AccessControlEventsLevel, options.DisableGlobalMFAScope, options.AgentURL)
 	if err != nil {
 		logrus.Fatalf("%v", err)
 	}

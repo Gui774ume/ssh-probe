@@ -15,13 +15,14 @@ limitations under the License.
 */
 package model
 
-import "C"
 import (
+	"C"
 	"bytes"
 	"fmt"
-	"github.com/Gui774ume/ssh-probe/pkg/utils"
 	"strings"
 	"time"
+
+	"github.com/Gui774ume/ssh-probe/pkg/utils"
 )
 
 type Resolver interface {
