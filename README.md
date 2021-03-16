@@ -110,7 +110,7 @@ Flags:
 INFO[2021-03-16T15:06:35Z] ssh-probe successfully started
 ```
 
-5) ssh into your instance with one of the users for which you wrote a profile. The session will automatically be tracked and protected by ssh-probe according to the profile your provided (note that existing ssh-sessions won't be tracked). In order to access a resource protected by MFA, you need to provide a one-time password to `ssh-probe-auth`. Once authentication is successful, you'll be able to perform the requested action within the provided time limit. Should you fail your MFA authentication too many times, your session will be immediately killed.
+5) ssh into your instance with one of the users for which you wrote a profile. The session will automatically be tracked and protected by ssh-probe according to the profile your provided (note that existing SSH sessions won't be tracked). In order to access a resource protected by MFA, you need to provide a one-time password to `ssh-probe-auth`. Once authentication is successful, you'll be able to perform the sensitive action within the provided time limit. Should you fail your MFA authentication too many times, your session will be immediately killed.
 
 ```shell script
 # ~ ssh-probe-auth -h
@@ -129,13 +129,13 @@ INFO[2021-03-16T15:19:09Z] Enter your one time password (or q to quit):
 592408
 INFO[2021-03-16T15:19:17Z] Authentication successful (token expires in 10s)
 
-# ~ // perform the requested action
+# ~ // perform the sensitive action
 ```
 
 ### MFA verification with eBPF
 
 In order to temporarily grant access to sensitive resources, we have implemented an MFA verification mechanism using eBPF. The reason why we used eBPF is twofold: first we have implemented the access control with eBPF, which means that our eBPF programs need to know if an access should be granted or not; second, we couldn't expose a local endpoint since the we wanted to enforce network access by blocking the creation of sockets (the local endpoint solution would have required sockets, thus forcing the profile to always grant network access for other resources to be protected with MFA).
 
-In other words, we eBPF to retrieve the MFA token from the `ssh-probe-auth` binary, without having to connect to a local endpoint. We decided to place a kprobe on the `stat` syscall, and use the file path provided to that syscall in order to push the one time password to kernel space. If our eBPF program recognizes the MFA declaration pattern in the path provided to `stat`, then the token, scope and timeout are parsed and sent to user space for verification. Once the token is accepted, `ssh-probe` pushes a temporary token to kernel space, so that our eBPF programs know which session should be granted temporary access to which resources. In the meantime, a signal is sent to `ssh-probe-auth` to let the user know that the MFA verification was successful (or not). Should the authentication fail too many times, the session is immediately killed.
+In other words, we used eBPF to retrieve the MFA token from the `ssh-probe-auth` binary, without having to connect to a local endpoint. We decided to place a kprobe on the `stat` syscall, and use the file path provided to that syscall in order to push the one time password to kernel space. If our eBPF program recognizes the MFA declaration pattern in the path provided to `stat`, then the token, scope and timeout are parsed and sent to user space for verification. Once the token is accepted, `ssh-probe` pushes a temporary token to kernel space, so that our eBPF programs know which session should be granted temporary access to which resources. In the meantime, a signal is sent to `ssh-probe-auth` to let the user know that the MFA verification was successful (or not). Should the authentication fail too many times, the session is immediately killed.
 
 ![MFA.png](documentation/MFA.png)
