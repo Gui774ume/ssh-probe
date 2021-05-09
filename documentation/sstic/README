@@ -1,0 +1,268 @@
+                      Template LaTeX pour SSTIC
+
+
+Utilisation
+===========
+
+Pour compiler les sources, c'est aussi simple que :
+    $ make from_docker
+
+Cette commande nécessite [docker](https://docs.docker.com/engine/install/).
+Si vous préférez utiliser votre distribution LaTeX locale:
+    $ make
+
+Par défaut, cette commande compile tous les articles présents dans le
+répertoire (un article est un répertoire dont le nom est composé de
+caractères alphanumériques et qui contient un fichier master.tex).
+
+Avec le modèle fraichement téléchargé, cela produira l'article
+MonNom.pdf et l'article MyName.pdf.
+
+Pour que la compilation fonctionne, il faut installer un certain
+nombre de packages LaTeX. Sous Debian, les packages nécessaires sont
+texlive, texlive-latex-extra, texlive-science, texlive-lang-french,
+cm-super et gs.
+
+
+Ce modèle doit être la base commune à tous les articles LaTeX pour
+SSTIC.
+
+Un exemple d'article est disponible dans le répertoire MonNom/ En
+tant qu'auteur, vous devez copier ce répertoire et l'adapter.
+
+    $ cp -r MonNom SecuriteDesTrotinettes
+
+Important : Vous ne devez modifier que les fichiers contenus dans le
+répertoire correspondant à votre article.
+
+Nous avons déjà sélectionné quelques packages. D'ailleurs, ces
+derniers nécessitent parfois d'installer des paquetages systèmes
+(lmodern pour lmodern, cm-super pour microtype). Si vous avez besoin
+d'ajouter un nouveau package, veuillez contacter l'équipe (actes (AT)
+lists.sstic.org) car nous devons vérifier la compatibilité des modules
+entre eux.
+
+
+Publication
+===========
+
+Vous devez envoyer les *sources* à actes (AT) lists.sstic.org avant
+la date butoir. Les sources peuvent être exportées via la commande:
+    $ make export
+
+L'auteur consciencieux prendre soin de corriger tous les warnings
+avant de nous envoyer ses sources :). En particulier, les erreurs les
+plus importantes sont signalées en rouge par la commande make.
+
+Vous pouvez envoyer une archive complète de votre répertoire
+(.tar.gz), ou encore un patch, ou un lien vers votre repository git
+dérivé du dépôt d'origine, etc.
+
+
+Découpage en sections
+=====================
+
+La classe llcns ne définit que 4 niveaux de sections :
+
+* section
+* subsection
+* subsubsection
+* paragraph
+
+Merci de *ne pas* redéfinir la profondeur des sections, en particulier
+le compteur secnumdepth.
+
+
+Si vous souhaitez mettre des annexes, vous pouvez utiliser \appendix :
+toutes les sections qui suivront cette commande seront identifiées par
+des lettres.
+
+
+Images, figures
+===============
+
+Les images doivent être placées dans un environnement figure de
+façon à pouvoir y associer facilement une légende et un label.
+
+Quelques notes:
+
+* La légende doit être en dessous de l'image
+
+* Le placement de l'image par LaTeX ne garantit pas que votre
+  image sera exactement où vous souhaitiez. Remplacez donc les
+  formules "l'image ci-dessous" mais plutôt par sa référence
+  ("l'image~\ref{fig:monnom:archi}")
+
+* il ne *FAUT* pas utiliser [H] pour forcer les figures flottantes
+  à une position donnée. Cela n'est pas une option standard et
+  elle est incompatible avec certains packages.
+
+* Format de l'image
+  - Compatible pdflatex : PNG, PDF
+  - Les formats vectoriels (comme PDF) sont recommandés car il
+    arrive de devoir redimensionner les images à l'édition
+    finale
+
+* Il est demandé de créér un répertoire img/ dédié à toutes les
+  images
+
+* La référence doit être préfixée par votre fig:monnom pour éviter les
+  collisions entre articles dans la version consolidée des actes.
+
+* Prenez soin de vos couleurs, SSTIC n'imprime qu'en dégradé de
+  gris, votre choix de couleurs doit donc respecter cette
+  contrainte.
+
+  Votre article sera publié sur papier et sur notre site Web. Vous
+  pouvez donc fournir les images dans les deux « formats » si cela
+  vous semble nécessaire.
+
+  Pour cela, le plus simple est d'inclure l'image aux deux formats
+  (bw-archi.png et archi.png) dans le répertoire img/ et d'utiliser la
+  macro \ifssticbw pour choisir la version à utiliser lors de la
+  compilation. Un illutstration de cette macro est donnée dans
+  l'article donné en exemple.
+
+
+Citations
+=========
+
+* Les références de citation doivent être préfixées par votre nom
+  afin d'empêcher les collisions entre auteurs.
+
+* La bibliographie doit être dans contenue dans le fichier
+  biblio.bib au format BibTeX
+  Référence des types : http://newton.ex.ac.uk/tex/pack/bibtex/btxdoc/node6.html
+  Référence des champs: http://newton.ex.ac.uk/tex/pack/bibtex/btxdoc/node7.html
+
+* Faites attention aux warning indiquant les références manquantes
+
+* Attention à la syntaxe lorsque vous citez plusieurs références:
+  MAUVAIS: \cite{foo, bar}
+  MAUVAIS: \cite{foo}\cite{bar}
+  CORRECT: \cite{foo,bar}
+
+* BibTeX a la fâcheuse tendance de ne pas conserver les majuscules
+  dans les titres des références. Pour éviter le problème, le plus
+  simple est d'entourer la valeur du champ title avec deux accolades
+  (le fichier MonNom/biblio.bib est un exemple)
+
+
+Texte verbatim
+==============
+
+lstlisting
+----------
+
+Documentation complète :  http://mirrors.ctan.org/macros/latex/contrib/listings/listings.pdf
+
+Options utiles :
+
+* ``language'' peut prendre les valeurs suivantes:
+   Python	Java		PHP		[x86masm]Assembler
+   C		Perl		HTML		[Sharp]C
+
+* ``numbers'' pour numéroter les ligne (``stepnumbers'' pour  contrôler l'incrément)
+
+* ``basicstyle'' pour modifier la police utilisée (exemple: basicstyle=\tiny)
+
+
+Mise en page
+============
+
+De manière générale, LaTeX fait un bon travail de mise en page. Dans
+tous les cas, ne vous souciez de la mise en page qu'à *la fin* de la
+rédaction.
+
+Si la mise en page ne vous plaît pas, évitez d'utiliser des sauts de
+ligne (\\) ou de page (\newpage) car cela casse la mise en page et
+nuit au rendu global. On préférera, si vraiment c'est nécessaire, les
+commandes \smallskip, \medskip et \bigskip qui s'intègrent mieux à
+l'algorithme de mise en page.
+
+En cas de doute, n'hésitez pas à poser la question à
+actes@lists.sstic.org. En effet, l'objetif est d'avoir un document
+unique contenant les différents articles. Homogénéiser les styles rend
+la lecture des actes plus agréables.
+
+Concernant les figures flottantes, elles ont vocation, comme leur nom
+l'indique, à *flotter*. Ne vous étonnez donc pas qu'elles
+n'apparaissent pas au bon endroit. Il est possible d'indiquer à LaTeX
+où on souhaiterait voir ces images. Lorsque vous en avez peu, les
+indications [ht] ou [h] suffisent. En revanche, si vous avez beaucoup
+de figures, LaTeX peut refuser d'en mettre plus de deux par
+page. Auquel cas vous pouvez essayer [p], qui regroupe les figures sur
+de pages dédiées. Le rendu obtenu est souvent préférable à ce que l'on
+obtient en forçant le positionnement des figures. En aucun cas il ne
+faut utiliser [H] dans vos articles.
+
+
+E-Book
+======
+
+La compilation des actes sous forme d'e-book se fait en appelant la
+commande make sstic-actes.{azw3,mobi,epub} (choisir l'extension
+voulue.
+
+Elle nécessite, en plus des paquetages LaTeX décrits ci-dessus, les
+outils suivants (les paquetages Debian sont indiqués entre parenthèses)
+ - htlatex (tex4ht)
+ - ebook-convert (calibre)
+ - cssselect (python-cssselect)
+
+La génération des e-books est un procédé incertain et fragile,
+utilisant divers formats (HTML entre autres) et de nombreux outils qui
+ne fonctionnent que grâce à la magie noire et à beaucoup de
+scotch. Cela explique que la commande peut échouer, ou ne pas rendre
+les actes de manière fidèle.
+
+
+FAQ
+===
+
+Q) docker: Got permission denied while trying to connect to the Docker daemon socket
+
+R) Il faut configuer docker pour être utilisable par un utilisateur non-privilégié:
+https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user
+ou utiliser la cible from_docker_su:
+    $ make from_docker_su
+
+
+Q) Quels packages LaTeX sont nécessaires/autorisés ?
+
+R) La liste est disponible dans le fichier Dockerfile, utilisé pour
+générer l'image invoquée par la cible from_docker.
+
+
+Q) LaTeX m'insulte avec le message sordide suivant :
+! pdfTeX error (font expansion): auto expansion is only possible with scalable fonts.
+
+R) Afin de fonctionner les packages séléctionnés nécessitent
+l'installation du paquetage Debian cm-super.
+
+
+Q) LaTeX m'insulte au sujet d'utf8x.def / algorithm.sty / du support
+du français. Que faire ?
+
+R) Il faut respectivement installer texlive-latex-extra,
+texlive-sciences et texlive-lang-french.
+
+
+Q) Autre message sordide de LaTeX:
+LaTeX Warning: Characters dropped after `\end{verbatim}'
+
+R) Le package verbatim change la façon dont les environnements du même
+nom sont interprétés.  En particulier, si vous avez une ligne de la
+forme '\end{verbatim}}', la seconde accolade est ignorée, ce qui mène
+logiquement à une problème plus loin.
+
+
+Q) Puis-je redéfinir des commandes (newcommand / renewcommand) ?
+
+R) Si ce sont des commandes perso (TODO, myurl), vous pouvez, mais
+pensez à préfixer ces commandes par votre nom ou quelque chose les
+rendant uniques (pour éviter la collision avec d'autres articles). Si
+ce sont des commandes standard (labelitemi, secnumdepth), la réponse
+est *non*. En effet, cela nuit à l'homogénéité des actes, et surtout,
+cela risque de casser les articles suivant le vôtre dans le
+document. En cas de doute, contactez la liste actes@.

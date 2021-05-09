@@ -1,0 +1,124 @@
+\documentclass{sstic}
+
+
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FRONT MATTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\pagestyle{empty}
+\frontmatter
+
+\ifssticpaper
+~
+
+\cleardoublepage
+\fi
+
+\begin{titlepage}
+\vspace*{\stretch{1}}
+\noindent
+
+% TODO: A remplacer par la couverture intérieure en noir et blanc
+\centering
+(Couverture intérieure)
+
+\vspace*{\stretch{1}}
+\end{titlepage}
+
+\clearpage
+
+\vspace*{\stretch{1}}
+\begin{center}
+% TODO: A renseigner
+ISBN: XXX-X-XXXXXXX-X-X
+\end{center}
+
+
+\clearpage
+\phantomsection
+\pdfbookmark{Pr\'eface}{preface}
+\chapter*{Préface}
+
+\input{_frontmatter/preface}
+\clearpage
+
+\input{_frontmatter/comites}
+\clearpage
+
+\input{_frontmatter/partenaires}
+\myclearpage
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MAIN MATTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\tableofcontents
+\mainmatter
+\pagestyle{fancy}
+
+\renewcommand{\thelstlisting}{\arabic{lstlisting}}
+
+\part*{Conférences}
+\addcontentsline{toc}{part}{Conférences}
+
+\input{_articles}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BACK MATTER
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\myclearpage
+\phantomsection
+\cleardoublepage
+\newpage
+\renewcommand{\indexname}{Index des auteurs}
+\addcontentsline{toc}{chapter}{\indexname}
+\printindex
+
+
+% TODO: Ajout d'une éventuelle postface
+% \cleardoublepage
+
+% \centerline{\Large \textbf{Postface}}
+% \vspace{2cm}
+% (Eventuelle postface)
+% \vspace{1mm}
+
+% \hfill Le comité d'organisation de SSTIC 20XX
+
+
+
+\pagestyle{empty}
+
+\clearpage
+
+\vspace*{\stretch{1}}
+\begin{center}
+\footnotesize
+Achevé d'imprimer par l'imprimerie de l'université de Rennes 1 en mai 2018.
+
+Dépôt légal: juin 20XX
+
+Éditeur: association STIC
+\end{center}
+
+\ifssticpaper
+\cleardoublepage
+\fi
+
+\end{document}

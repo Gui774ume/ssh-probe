@@ -1,0 +1,275 @@
+% You must put english here to handle hyphenation correctly
+% Please keep this line to avoid using the parameter from the previous article in the proceedings
+\selectlanguage{english} % possible values : french, english
+
+\settitle[Monitoring and protecting SSH sessions with eBPF]{Monitoring and protecting SSH sessions with eBPF}
+
+\setauthor[G.~Fournier]{Guillaume Fournier \\
+  \email{gui774ume.fournier@gmail.com}}
+
+\institute{Datadog}
+
+% To handle authors with multiple institutions, you can use the following code:
+%
+%   \setauthor[M.~MonNom, A.~MonAutreNom]{MonPrenom MonNom\inst{1} \and AutrePrenom AutreNom\inst{2}\\
+%     \email{monprenom.monnom@mycorp.com\\autreprenom.autrenom@mycorp.com}}
+%
+%   \institute{OrganismePourMonNom \and OrganismePourAutreNom}
+%
+% For \institute, the numbering is automatic (and starts at 1)
+
+
+\maketitle
+\index{Fournier, G.}
+
+\begin{abstract}
+  According to Verizon's Data Breach Investigations Report~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:DBIR}, credential theft, user errors and social engineering account for 67\% of the data breaches that occurred in 2020.
+  This is not a particularly new problem: credentials in general have always been a sensitive issue, particularly when users have to interact with them.
+  Even with the best security recommendations in place, like credentials rotation or certificate based authentication, SSH access will always be a security hazard.
+  This article intends to explain why the default Mandatory Access Controls of Linux are not enough to provide a granular control over SSH sessions.
+  eBPF will be explored as a potential solution to provide a refined access control granularity along with SSH sessions security audit capabilities.
+\end{abstract}
+
+\section{Introduction}
+
+Secure Shell (SSH)~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:SSH} is a network protocol that provides users with a secure way to access a host over an unsecure network.
+Multiple actors in an organisation usually require this access:
+
+\begin{itemize}
+  \item Developers use it to debug applications in a staging or sometimes production environment.
+  \item Software Reliability Engineering (SRE) teams and system administrators often perform maintenance and system configuration tasks over SSH\@.
+  \item Security administrators often require access to machines in production environments to perform security investigations and incident response.
+\end{itemize}
+
+In theory, the principle of least privileges should be applied, and each actor should be granted the bare minimum access required to perform its tasks.
+Although SRE teams and security engineers are likely to require privileged access, developers might not always need it.
+Regardless of the level of access on a machine, developers should also have access only to the hosts that run the services they work on.
+
+Unfortunately, those principles are often hard to follow.
+First, debugging an application often means using runtime performance monitoring tools to understand why a service is not performing as expected.
+For example, you might want to analyse the ext4 operations latency distribution using a tool like \emph{ext4dist}~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Ext4}.
+Some of those performance monitoring tools require root access, which means that many developers will eventually request permanent root access.
+Moreover, with the growing adoption of container orchestration tools like Kubernetes, hosts are no longer dedicated to specific services\footnote{Kubernetes can be configured to dedicate some hosts to specific workloads, but this requires a custom setup that often voids the entire point of a Kubernetes environment.
+In this document, we expect Kubernetes to follow its default configuration, which is to allow any workload to be scheduled on any host of a cluster.}.
+Many developers will eventually require root access to some of the nodes of the infrastructure\footnote{access to a pod through the \emph{kubectl exec} command is rarely enough to debug a service in Kubernetes.}, thus also granting them access to some pods of services they do not own.
+As companies grow and engineering teams expand, the number of privileged users on the infrastructure skyrockets, making it particularly hard for the security team to monitor SSH sessions and contain the blast radius of leaked credentials.
+
+This paper explores how eBPF can provide a solution to monitor SSH sessions, while providing a security team with a new access control layer.
+This new access control grants temporary access to scoped resources.
+In other words, the “all or nothing” access usually granted to Linux users no longer applies: a \emph{sudoer} user might be able to become root, its access will still be restricted to the access granted to the SSH session.
+
+\section{Securing SSH sessions: state of the art and limitations}
+
+\subsection{Security recommendations to protect SSH access}
+
+It is generally agreed that public key authentication for SSH is better than using passwords~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Facebook}.
+Unfortunately, even public keys are far from being perfect because they come with the burden of key management.
+The main criticism is usually that key management is complex and does not scale well.
+From key rotation to keeping up with the employees turnover, updating the authorized keys of hundreds of hosts can quickly become a logistical nightmare.
+This is why the current security recommendation is to switch to a certificate based authentication.
+Instead of using keys with permanent access, temporary certificates are delivered by a Certificate Authority (CA) so that users can authenticate to hosts and hosts to users.
+Then, logging into a host becomes simply the process of showing each other a certificate and validating that it was signed by the trusted CA.
+
+The second security recommendation is to enforce the use of a bastion host (sometimes also called a jumpbox).
+In a few words, a bastion host is a server that is specifically designed to be the only gateway for SSH access into an infrastructure.
+A bastion host helps reduce the points of entry into an infrastructure, while also providing a single place to monitor and audit SSH access.
+From the hosts side of things, you should also configure the network firewall to block incoming SSH connections that are not from the bastion host.
+
+Next is Multi-factor authentication (MFA).
+MFA or 2-factor authentication makes it harder for attackers to log into your infrastructure by enforcing the need for two different login methods for the authentication to be successful.
+Multiple options exist: hardware authentication devices (like a Google Titan or a Yubikey), text messages, One-time Password (OTP) applications (like Google Authenticator or Duo), etc.
+Ubuntu published a comprehensive guide to set up Google Authenticator with OpenSSH~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Ubuntu2FA}.
+
+The final security recommendation is to audit login logs of the SSH server.
+A login audit trail will be particularly useful during an investigation to gather the list of hosts accessed by a compromised user.
+
+\subsection{Why aren’t those security recommendations enough ?}
+
+\subsubsection{MFA isn’t perfect, stolen credentials are still a threat}
+
+One of the most important goals of the recommendations described in the previous section, is to make sure that access is granted temporarily (certificates should be configured to last a few hours, and MFA authentication is time sensitive by design) and harder to compromise (stealing credentials is not enough, attackers need to compromise your MFA method too).
+Although this mitigates the probability of being compromised, it does not affect the impact of stolen credentials.
+Indeed, even MFA solutions can be compromised.
+The most famous and recent example of 2-factor authentication abuse is what happened to Twitter’s CEO Jack Dorsey in 2019~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Twitter}.
+In a few words, Jack Dorsey was the target of a SIM swap attack~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:MITRE} which allowed an attacker to bypass an SMS based MFA. Ultimately, the attacker was able to control Jack Dorsey’s Twitter account.
+Some might argue that the problem is SMS based MFA, because it relies on the mobile carrier to carefully protect your phone number and account.
+This is why authenticator applications or hardware authentication devices are usually recommended for implementing MFA.
+
+Unfortunately, MFA is hard to get right, regardless of the intermediaries (like a phone carrier) that might be involved in the process.
+Proofpoint~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Proofpoint} recently discovered critical vulnerabilities in cloud environments where WS-Trust~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:WSTrust} is enabled.
+They were reportedly capable of bypassing MFA for multiple Identity Providers and cloud applications that used the protocol, such as Microsoft 365.
+Hardware authentication devices are no exception to the rule, multiple vulnerabilities were discovered over the past few years that could be exploited to either extract the encryption key~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Titan} of the hardware, or bypass the verification entirely~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Chrome}.
+
+Regardless of all those hiccups, MFA is still a must have to protect the SSH access to an infrastructure.
+However, it is important to note that it is a security layer and not a bullet proof strategy.
+Regardless of MFA design flaws, human errors and phishing attacks are still omnipresent, which means that even a well configured infrastructure is exposed to the threat of stolen credentials and malicious access.
+In other words, MFA makes it harder for remote access to be compromised, but we are still missing a security layer to mitigate the impact at runtime of stolen credentials.
+
+\subsubsection{SSH access is rarely granular}
+
+This subject has already been discussed in the introduction of this article, but in a few words, it is likely that many developers have an unnecessarily high level of access by default.
+Whether it is to enable debugging and monitoring tools, or because a containerized infrastructure blurs the lines between services, the blast radius of stolen credentials is often really high.
+The data breach that affected GoDaddy in 2019 is probably the best example showing how quickly things can escalate when SSH credentials with a high level of access are stolen~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:GoDaddy}.
+In short, an unauthorized individual gained access to login credentials that eventually led to the compromise of 28 000 customers.
+
+To be fair, Linux doesn’t make it particularly easy to configure granular access at scale.
+Kernel capabilities~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:KernelCapabilities} and various setuid or setgid tricks could be used to avoid granting sudo access to a developer who needs to run various debugging and monitoring tools.
+Unfortunately, using them requires a special setup on each machine and having to redeploy an updated configuration through a tool like Chef~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Chef} or Ansible~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Ansible} to an entire infrastructure takes time and simply doesn’t scale.
+Eventually, developers will request temporary or permanent sudo access, thus forcing the security team into another logistical nightmare.
+
+Regardless of the sudo access problem, developers will require legitimate access to sensitive resources such as databases or applications credentials.
+Even when it is justified, accessing this data should be carefully monitored, and if possible, should require an additional layer of audit and access control.
+
+\subsubsection{SSH sessions audit logs are limited to logins and logouts}
+
+Audit logs are the last pain points of SSH sessions.
+Most SSH servers will export login and logout events, but this is not enough to understand what a user did on the host.
+Collecting the shell history could be an option, but attackers are likely to clean up their tracks behind them, so it cannot be considered as a reliable solution.
+Security teams will have to rely on additional runtime security monitoring tools to monitor sensitive processes and file system activity.
+
+\section{SSH sessions monitoring and protecting with eBPF}
+
+\emph{ssh-probe}~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:SSHProbe} is an open source utility powered by eBPF that aims at monitoring and protecting SSH sessions at runtime.
+First, we’ll talk about the live session monitoring feature of \emph{ssh-probe}, showing how eBPF can be used to monitor SSH sessions in real time.
+Then, we’ll deep dive into the session based, scope based and time based access control implemented by \emph{ssh-probe}.
+This project was developed for OpenSSH because it is open source and one of the most popular SSH implementations.
+
+\subsection{Live session monitoring}
+
+eBPF is a well known technology used for tracing kernel level activity~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:BrendanGregg}.
+Multiple eBPF program types exist~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:LorenzoDavid}: some are dedicated to network use cases, others kernel tracing (like Kprobes~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Kprobes} or Tracepoints~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Tracepoints}), etc.
+One of them is dedicated to tracing user space processes and more specifically user space function calls with exported symbols.
+In a few words, this means that you can execute an eBPF program any time an exported symbol of a user space binary is called.
+This hooking mechanism is called a Uprobe~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Uprobes}, and the context provided to Uprobe programs contains the arguments given to the user space function.
+
+In our case, the OpenSSH daemon exports a symbol called \emph{setlogin} which is called when a new session is created with the username associated with the session.
+This means that by hooking a Uprobe on the \emph{setlogin} symbol of OpenSSH, we can detect the first process of a new SSH session and associate it to its rightful user.
+We decided to use this hook point to detect the creation of a new session because it was a practical way to access the username directly.
+However, note that many other kernel space events could have been chosen too.
+For example, we could have decided to detect when \emph{sshd} calls the \emph{setuid} syscall to set the user ID of the SSH session.
+
+Once a new session is detected, our eBPF programs create a random session ID that will be used to track the new session.
+More precisely, \emph{ssh-probe} uses multiple Kprobes to track processes lifecycle (such as \emph{fork} events, \emph{execve} events, \emph{exit} events, etc) and make sure that the session ID is inherited from a parent PID to its children.
+Since this information is stored in an eBPF hashmap~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:LorenzoDavid} indexed by pid, we can match any kind of kernel level activity back to its SSH session.
+\emph{ssh-probe} uses up to 127 hook points in the kernel to track:
+
+\begin{itemize}
+  \item Process scheduling events: \emph{ssh-probe} can report the list of processes that were executed by an SSH session.
+  \item Sensitive process operations: \emph{ssh-probe} looks for known process injection techniques that could be used to alter production services or access sensitive data.
+  \item Process credentials update: \emph{ssh-probe} can report when a process changes its user, group or kernel capabilities.
+  This is important to understand what access a user had during a session.
+  \item File system activity: \emph{ssh-probe} can detect when sensitive files are accessed.
+  Since we couldn’t possibly send the exhaustive list of all file system events, you’ll need to provide a list of file patterns that should generate an audit log.
+  \item Socket creation: An accurate tracking of network activity wasn’t in the scope of this project.
+  This is why we decided to monitor socket creations to notify that an SSH session generated some network traffic.
+  If you’re interested in monitoring and protecting network activity at the process level, we published an article on that topic at SSTIC 2020~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:NSP}.
+  \item Sensitive kernel events: \emph{ssh-probe} looks for sensitive kernel level activity like the insertion of a new kernel module, system clock adjustments, etc.
+\end{itemize}
+
+Those events are then sent back to user space using an eBPF perf map~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:LorenzoDavid}, so that \emph{ssh-probe} can forward them to a log ingestion backend like Datadog.
+Then, Datadog provides the ability to visualize and regroup the generated events by session, allowing the user to reconstruct SSH sessions remotely and in real time.
+
+\subsection{Session, scope and time based access control}
+
+Apart from monitoring SSH sessions, \emph{ssh-probe} is also capable of enforcing security profiles.
+A security profile defines, for a given user, what may or may not happen during an SSH session.
+For example, profiles usually include a list of sensitive file patterns, a list of binaries and the default behavior that \emph{ssh-probe} should enforce for predefined lists of syscalls.
+In short, \emph{ssh-probe} is capable of enforcing access to the resources listed in the previous section.
+You can find an example profile in the code repository of the project~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:Profile}.
+Each entry of the profile can be configured so that \emph{ssh-probe} takes one of the following actions:
+
+\begin{itemize}
+  \item \emph{allow}: \emph{ssh-probe} grants access to the ressource and generates an audit log.
+  \item \emph{block}: \emph{ssh-probe} denies access to the ressource.
+  Most of the time, this translates into blocking a syscall and overriding its answer to “permission denied” with the \emph{bpf\_override\_return} helper~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:OverrideReturn}.
+  \item \emph{MFA}: until an MFA authentication is successful, \emph{ssh-probe} denies access to the ressource just like the \emph{block} action.
+  The MFA authentication mechanism is described below.
+  \item \emph{kill}: \emph{ssh-probe} kills the SSH session.
+\end{itemize}
+
+One interesting aspect of this mechanism is that it is implemented on top of the normal access controls of Linux.
+In other words, it cannot be used to grant more access than what is already given to the Linux user.
+This design is particularly useful when you want to restrict the access given to a \emph{sudoer}.
+Even if the user elevates its privileges to the root user, \emph{ssh-probe} will still be able to restrict its access to predefined resources such as specific binaries (namely the tracing and debugging tools we talked about in the previous sections).
+Similarly, sensitive files can be blocked even from the root user.
+For example, there is no reason for a \emph{sudoer} developer to ever access a file in "/root/.ssh/*".
+Similarly, you might want to audit accesses to credential files like "/etc/shadow".
+
+Another important feature of \emph{ssh-probe} is the ability to grant temporary access to specific resources based on an additional MFA verification.
+We implemented a scope and time based MFA verification that grants access only to the active SSH session.
+In other words, 2 sessions that originated from the same user may not have the same level of access at a given time.
+
+On a technical standpoint, we had an interesting challenge to solve: how can a user provide its MFA token to \emph{ssh-probe} without using a socket ?
+Indeed, you might have noticed that one of the sections available in a profile is \emph{socket\_creation}.
+This section controls if the processes of an SSH session are allowed to create a socket.
+If the MFA verification required the use of a socket to communicate with \emph{ssh-probe}, then sockets would have had to be allowed by default.
+So, we eventually came up with the idea of overloading the \emph{stat} syscall using eBPF, so that a user space program can send data to \emph{ssh-probe} without having to connect to any local endpoint.
+Moreover, the session doesn’t have to identify itself to \emph{ssh-probe}, since our eBPF programs already track the active session in kernel space.
+In other words, in order to request temporary access to a specific resource, a session simply needs to call the \emph{stat} syscall with a valid one-time password (OTP).
+We provided a utility (called \emph{ssh-probe-auth}) to facilitate this authentication.
+Figure~\ref{fig:MonitoringAndProtectingSSHSessionsWithEBPF:MFA} explains in more details how this mechanism works.
+
+\begin{figure}[ht]
+  \centering
+  \ifssticbw
+  \includegraphics[width=\textwidth]{MonitoringAndProtectingSSHSessionsWithEBPF/img/mfa}
+  \else
+  \includegraphics[width=\textwidth]{MonitoringAndProtectingSSHSessionsWithEBPF/img/mfa}
+  \fi
+  \caption{MFA implementation with eBPF}
+  \label{fig:MonitoringAndProtectingSSHSessionsWithEBPF:MFA}
+\end{figure}
+
+\begin{enumerate}
+  \item \emph{ssh-probe-auth} calls the \emph{stat} syscall with the following input parameter:
+    \begin{lstlisting}[language={},caption={MFA \emph{stat} syscall},label={lst:MonitoringAndProtectingSSHSessionsWithEBPF:STAT}]
+  stat("otp://fim:10000@234123")
+    \end{lstlisting}
+    \begin{itemize}
+      \item \emph{fim} is the scope of the request
+      \item \emph{10000} is the duration of validity of the request
+      \item \emph{234123} is the one-time password (OTP)
+    \end{itemize}
+  \item \emph{ssh-probe} placed a kprobe on the \emph{stat} syscall, which means that one of our eBPF programs will be called with the input parameters of the syscall before the syscall is actually executed.
+  \item The eBPF program on \emph{stat} parses the request and forwards it to \emph{ssh-probe} in user space using an eBPF perf map~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:LorenzoDavid}.
+  The session credentials are appended to the request.
+  \item \emph{ssh-probe} verifies the provided OTP for the active session and, if access is granted, pushes a temporary token in an eBPF map to let our access control know that access should be temporarily granted for the given resource and session.
+  \item \emph{ssh-probe} sends a signal to \emph{ssh-probe-auth} with the outcome of the MFA verification.
+  SIGUSR1 is used to notify that access is granted for the requested resource and duration of time, SIGUSR2 is used to notify that access is denied.
+\end{enumerate}
+
+\subsection{Limitations and future work}
+
+This project is still under development and we want to add more features.
+For example, profiles could be even more fine grained and define access on a per user and process basis.
+For example, you might want to allow read access to "/etc/passwd" to the \emph{sudo} binary, but there is no reason for a developer to access this file with \emph{cat}.
+Similarly, you might want to grant network access to your various network tracing tools, but not to \emph{bash}.
+
+Moreover, our access control is session based, and sessions are tracked using the processes lineage at runtime.
+Any mechanism that can trigger the execution of a binary outside of the process tree of the session would not be subject to the session access control.
+For example, starting a container would create a child process of the container daemon.
+Similarly, a \emph{cron} job or a \emph{systemd} service would be excluded from the SSH session.
+For now, blocking specific binaries like the docker client and specific files like "/etc/crontab" can be used as a temporary workaround.
+
+Another important limitation of \emph{ssh-probe} is that it uses the \emph{bpf\_override\_return} helper~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:OverrideReturn} to block syscalls.
+Unfortunately, this helper is only available if the kernel was built with "CONFIG\_BPF\_KPROBE\_OVERRIDE=y".
+Although it is present on some Linux distributions like Ubuntu Focal, this cannot be considered as a universal solution.
+Fortunately, new eBPF features are constantly added in the Linux Kernel,
+including some security enforcement capabilities like the Kernel Runtime Security Instrumentation (KRSI)~\cite{MonitoringAndProtectingSSHSessionsWithEBPF:KRSI}.
+In a few words, KRSI can be used to implement a Linux Security Module with eBPF, thus introducing the ability to reliably enforce \emph{ssh-probe}’s security profiles.
+
+\section{Conclusion}
+
+SSH access is one of those services that can brutally undermine any security measure you might have put in place to protect your infrastructure.
+Its security is of critical importance for a company and the data of its customers.
+Although the recommended best practices go a long way towards reducing the risk for an SSH access to be compromised, they do not really impact the blast radius of stolen credentials.
+\emph{ssh-probe} shows how eBPF can be leveraged to provide reliable visibility into active SSH sessions in real-time, while providing an additional session, scope and time based access control.
+
+\bibliography{MonitoringAndProtectingSSHSessionsWithEBPF/biblio}
+
+% Some typography nits
+%
+% You must not have any space between your text and the \footnote command.
+%
+% You must add an "espace insécable" ~ before references~\ref{...} and
+% citation~\cite{...} commands.
